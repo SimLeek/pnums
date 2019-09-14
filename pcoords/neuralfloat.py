@@ -12,7 +12,7 @@ def binlist_to_int(binlist):
     return out
 
 
-class NeuralBinary(Real):
+class NeuralFloat(Real):
     """
     Converts A floating point number to a binary array that's closer to what the brain uses, centered at zero.
 
@@ -20,23 +20,23 @@ class NeuralBinary(Real):
     networks that connect to this number to learn will be able to learn be able to learn ranges. Or areas for the 2D
     version of this.
 
-    >>> a = NeuralBinary(3.14, min_val=.001, max_val=100)
+    >>> a = NeuralFloat(3.14, min_val=.001, max_val=100)
     >>> print(a)
     [[0. 0. 0. 0. 0. 1. 1. 0. 0. 1. 0. 0. 0. 1. 1. 1. 1. 0. 1. 0. 1. 1. 1. 0.
-      0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+      0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
      [0. 0. 0. 0. 0. 0. 0. 1. 1. 0. 1. 1. 1. 0. 0. 0. 0. 1. 0. 1. 0. 0. 0. 1.
-      1. 1. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+      1. 1. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
     >>> print(float(a))
     3.1399998664855957
 
-    >>> b = NeuralBinary(3.14*2, min_val=.001, max_val=100)
+    >>> b = NeuralFloat(3.14*3, min_val=.001, max_val=100)
     >>> print(b)
-    [[0. 0. 0. 0. 1. 1. 0. 0. 1. 0. 0. 0. 1. 1. 1. 1. 0. 1. 0. 1. 1. 1. 0. 0.
-      0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
-     [0. 0. 0. 0. 0. 0. 1. 1. 0. 1. 1. 1. 0. 0. 0. 0. 1. 0. 1. 0. 0. 0. 1. 1.
-      1. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+    [[0. 0. 0. 1. 0. 0. 1. 0. 1. 1. 0. 1. 0. 1. 1. 1. 0. 0. 0. 0. 1. 0. 1. 0.
+      0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+     [0. 0. 0. 0. 1. 1. 0. 1. 0. 0. 1. 0. 1. 0. 0. 0. 1. 1. 1. 1. 0. 1. 0. 1.
+      1. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
     >>> print(float(b))
-    6.279999732971191
+    9.419998168945312
     """
 
     def __init__(self, num=0.0, min_val=2 ** -126, max_val=2 ** 127, mantissa_bits=23):
@@ -62,6 +62,9 @@ class NeuralBinary(Real):
         if exp > self.up_bits:
             exp = self.up_bits
             mantissa_array = [1 for _ in range(self.mantissa_bits)]
+        elif exp < -self.down_bits:
+            exp = -self.down_bits
+            mantissa_array = [0 for _ in range(self.mantissa_bits)]
         else:
             mantissa_array = [int(x) for x in bin(int(abs(mantissa * 2 ** self.mantissa_bits)))[2:]]
         active_bits = np.array(mantissa_array, dtype=np.bool)
@@ -155,3 +158,30 @@ class NeuralBinary(Real):
 
     def __eq__(self, other):
         pass
+
+class NeuralRobustFloat(Real):
+    """
+    Uses a list of masks to convert a NeuralFloat to a set of new representations, which can all be unmasked.
+
+    The benefit of using this is that if the binary values are combined later, multiple numbers can be taken out
+    instead of one
+
+    >>> a = NeuralFloat(3.14, min_val=.001, max_val=100)
+    >>> print(a)
+    [[0. 0. 0. 0. 0. 1. 1. 0. 0. 1. 0. 0. 0. 1. 1. 1. 1. 0. 1. 0. 1. 1. 1. 0.
+      0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+     [0. 0. 0. 0. 0. 0. 0. 1. 1. 0. 1. 1. 1. 0. 0. 0. 0. 1. 0. 1. 0. 0. 0. 1.
+      1. 1. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+    >>> print(float(a))
+    3.1399998664855957
+
+    >>> b = NeuralFloat(3.14*3, min_val=.001, max_val=100)
+    >>> print(b)
+    [[0. 0. 0. 1. 0. 0. 1. 0. 1. 1. 0. 1. 0. 1. 1. 1. 0. 0. 0. 0. 1. 0. 1. 0.
+      0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+     [0. 0. 0. 0. 1. 1. 0. 1. 0. 0. 1. 0. 1. 0. 0. 0. 1. 1. 1. 1. 0. 1. 0. 1.
+      1. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+    >>> print(float(b))
+    9.419998168945312
+    """
+    pass
