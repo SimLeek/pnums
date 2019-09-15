@@ -92,6 +92,9 @@ def inversion_double(in_array):
     return np.stack((in_array, np.logical_not(in_array)))
 
 
+i_extend_dict = {}
+
+
 def i_extend(in_array, new_dim_len, sort=True):
     """
     >>> i_extend(np.array([ 1, 0, 1, 1, 1, 0, 0, 1], dtype=np.bool), 8).astype(np.uint8)
@@ -122,11 +125,17 @@ def i_extend(in_array, new_dim_len, sort=True):
     """
     base_array = inversion_double(in_array)
     base_array = np.expand_dims(base_array, axis=0)
+
     if sort:
-        i_list = [ith for _, ith in
-                  sorted(zip([ith_middle(i) for i in range(new_dim_len - 1)], [j for j in range(new_dim_len - 1)]))]
+        if new_dim_len in i_extend_dict.keys():
+            i_list = i_extend_dict[new_dim_len]
+        else:
+            i_list = [ith for _, ith in
+                      sorted(zip([ith_middle(i) for i in range(new_dim_len - 1)], [j for j in range(new_dim_len - 1)]))]
+            i_extend_dict[new_dim_len] = i_list
     else:
         i_list = range(new_dim_len - 1)
+
     for i in i_list:
         next_array = mask_ith_middle(in_array, i)
         double_next_array = inversion_double(next_array)
