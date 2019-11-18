@@ -1,41 +1,29 @@
-[build-system]
-requires = [
-    "pytorch",
-    "pyaudio",
-    "cvpubsubs",
-]
-build-backend = 'setuptools.build_meta'
-
-[tool.black]
-line-length = 120
-target-version = ['py36', 'py37', 'py38']
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/'''
-
 [tool.poetry]
-name = "earai"
-version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+name = 'coordencode'
+version = '0.0.1'
+description = 'A library that encodes coordinates so neural networks can use them better.'
+authors = ['SimLeek <simulator.leek@gmail.com>']
+license = 'MIT'
+readme = "README.rst"
+repository = "https://github.com/simleek/coordencode"
 
 [tool.poetry.dependencies]
 python = "^3.6"
+numpy = "1.16.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^3.0"
+pytest = "5.2.1"
+typing = "3.7.4.1"
+mock = "^3.0"
+tox = "^3.14"
+tox-gh-actions = "^0.3.0"
+coverage = "^4.5"
+sphinx = "^2.2"
+black = {version = "^18.3-alpha.0", allows-prereleases = true}
+mypy = "^0.740.0"
+pydocstyle = "^4.0"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ['poetry']
 build-backend = "poetry.masonry.api"
+
