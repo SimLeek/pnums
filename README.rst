@@ -1,7 +1,7 @@
-
-# PCoords
+PCoords
+=======
 Neural Coordinates
 
-# Installation
-
+Installation
+------------
 Will be pip installable on first release.
