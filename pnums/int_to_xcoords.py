@@ -4,7 +4,7 @@ import math as m
 
 import numpy as np
 
-from coordencode.ith_middle import ith_middle, mask_ith_middle
+from pnums.ith_middle import ith_middle, mask_ith_middle
 from typing import Dict, Any
 
 
@@ -23,11 +23,11 @@ def _int_to_packed_uint8(in_int):
     return in_array
 
 
-def _int_to_bool_array(in_int, length):
+def int_to_bool_array(in_int, length):
     """
     Convert an int to a bool array.
 
-    >>> _int_to_bool_array(16, 32)
+    >>> int_to_bool_array(16, 32)
     array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
            0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.])
 
@@ -39,11 +39,11 @@ def _int_to_bool_array(in_int, length):
     return byte_arr
 
 
-def _inversion_double(in_array):
+def inversion_double(in_array):
     """
     Get the input boolean array along with its element-wise logical not beside it. For error correction.
 
-    >>> _inversion_double(np.array([1,0,1,1,1,0,0,1], dtype=np.bool))
+    >>> inversion_double(np.array([1,0,1,1,1,0,0,1], dtype=np.bool))
     array([[ True, False,  True,  True,  True, False, False,  True],
            [False,  True, False, False, False,  True,  True, False]])
     """
@@ -86,7 +86,7 @@ def _i_extend(in_array, ext, sort=True):
             [1, 0, 1, 1, 1, 0, 0, 0]]], dtype=uint8)
 
     """
-    base_array = _inversion_double(in_array)
+    base_array = inversion_double(in_array)
     base_array = np.expand_dims(base_array, axis=0)
 
     if sort:
@@ -108,7 +108,7 @@ def _i_extend(in_array, ext, sort=True):
 
     for i in i_list:
         next_array = mask_ith_middle(in_array, i)
-        double_next_array = _inversion_double(next_array)
+        double_next_array = inversion_double(next_array)
         double_next_array = np.expand_dims(double_next_array, axis=0)
         base_array = np.concatenate((base_array, double_next_array), axis=0)
     return base_array
@@ -116,7 +116,7 @@ def _i_extend(in_array, ext, sort=True):
 
 def int_to_1d(in_int, max_bits, new_dim_length):
     """Convert an integer to a 1D format with error correction for transformers."""
-    bool_array = _int_to_bool_array(in_int, max_bits)
+    bool_array = int_to_bool_array(in_int, max_bits)
     extended_bool_array = _i_extend(bool_array, new_dim_length)
     return extended_bool_array
 
