@@ -2,8 +2,8 @@
 
 from svtk.vtk_classes.vtk_animation_timer_callback import VTKAnimationTimerCallback
 
-import coordencode.int_to_xcoords
-from coordencode.neuralfloat import NeuralFloat
+import pnums.int_to_xcoords
+from pnums.neuralfloat import NeuralFloat
 from svtk.vtk_classes.vtk_displayer import VTKDisplayer
 import time
 
@@ -58,7 +58,7 @@ import numpy as np
 class RobustBinaryAnimator(VTKAnimationTimerCallback):
     def __init__(self):
         super(RobustBinaryAnimator, self).__init__()
-        self.nb = coordencode.int_to_xcoords.ints_to_2d(0, 32, 8, 0, 32, 8)
+        self.nb = pnums.int_to_xcoords.ints_to_2d(0, 32, 8, 0, 32, 8)
 
     def loop(self, obj, event):
         super(RobustBinaryAnimator, self).loop(obj, event)
@@ -88,9 +88,7 @@ class RobustCallbackClass(RobustBinaryAnimator):
         super(RobustCallbackClass, self).loop(obj, event)
         if self.robust_callback:
             self.i = self.robust_callback(self.i)
-        self.nb = coordencode.int_to_xcoords.ints_to_2d(
-            self.i, 32, 8, self.i / 3, 32, 8
-        )
+        self.nb = pnums.int_to_xcoords.ints_to_2d(self.i, 32, 8, self.i / 3, 32, 8)
         self.set_all_point_colors(brown_dark)
         indexes = np.nonzero(np.ravel(self.nb))
         self.set_point_colors(brown_bright, list(indexes))
