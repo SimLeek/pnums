@@ -108,3 +108,5 @@ venv.bak/
 .idea/
 .pytest_cache/
 .coveragerc
+
+*.lock
