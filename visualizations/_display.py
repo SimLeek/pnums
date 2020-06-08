@@ -88,9 +88,7 @@ class RobustCallbackClass(RobustBinaryAnimator):
         super(RobustCallbackClass, self).loop(obj, event)
         if self.robust_callback:
             self.i = self.robust_callback(self.i)
-        self.nb = pnums.int_to_xcoords.ints_to_2d(
-            self.i, 32, 8, self.i / 3, 32, 8
-        )
+        self.nb = pnums.int_to_xcoords.ints_to_2d(self.i, 32, 8, self.i / 3, 32, 8)
         self.set_all_point_colors(brown_dark)
         indexes = np.nonzero(np.ravel(self.nb))
         self.set_point_colors(brown_bright, list(indexes))

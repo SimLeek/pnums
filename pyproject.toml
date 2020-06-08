@@ -1,11 +1,11 @@
 [tool.poetry]
-name = 'coordencode'
+name = 'pnums'
 version = '0.0.2'
 description = 'A library that encodes coordinates so neural networks can use them better.'
 authors = ['SimLeek <simulator.leek@gmail.com>']
 license = 'MIT'
 readme = "README.rst"
-repository = "https://github.com/simleek/coordencode"
+repository = "https://github.com/simleek/pnums"
 
 [tool.poetry.dependencies]
 python = "^3.6"
