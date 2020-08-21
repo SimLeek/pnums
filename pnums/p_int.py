@@ -1,5 +1,6 @@
 """Probabilistic n-dimensional binary integer format."""
 
+import itertools
 from numbers import Real
 
 import numpy as np
@@ -27,10 +28,10 @@ def layer_xor(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Run an xor operation between two layers of neurons."""
     o = convolve(a, b, mode="wrap")
     s = np.sum(o)
-    if s != 0:
-        return o / s
-    else:
+    if s == 0:
         return layer_zero(o)
+    else:
+        return o / s
 
 
 def layer_zero(a: np.ndarray):
@@ -49,35 +50,115 @@ def layer_one(a: np.ndarray):
 
 def layer_and(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Run an and operation between two layers of neurons."""
-    if a.ndim > 1:
-        a_max = np.argwhere(np.max(a) == a)
-        b_max = np.argwhere(np.max(b) == b)
-        c_sum = np.sum((1 - a_max) * (1 - b_max))
-        a_sum = np.sum(a_max)
-        b_sum = np.sum(b_max)
-        if a_sum > b_sum:
-            o = a * np.sum(b)
-        elif a_sum == b_sum or c_sum == 0:
-            o = a * b
+
+    # algorithm should be an n-d product towards one. If one bit is 1,1,1...
+    #  1,1,1 will multiply only with 1,1,1
+    #  1,0,1 will multiply with 1,0,1 and 1,1,1
+    #  1,0,0 will multiply with 100, 101, 110, 111
+    # nd tensor algorithm will need a, b, and zero tensors
+    one = layer_one(a)
+    one = tuple(w[0] for w in np.where(one == 1))
+    zero = layer_zero(a)
+    zero = tuple(w[0] for w in np.where(zero == 1))
+    o = np.zeros_like(a)
+
+    # This first loop populates each location in a n-dimensional array where each dimension is length two, but it has a
+    # flaw. If you're at 1,0 and the other is at 1,1, where 0,0 is the top left:
+    #  0|1 and 0|0 = 0|1
+    #  0|0     0|1   0|0
+    # So you can't just multiply same positions. Instead, we sum up all different positions differing from true one in
+    # all or less than the same dimension that our number is differing from one. Here are the diffs in 2d:
+    # xy|x
+    #  y|0
+    # However, we discard zero, because it's never the result of AND with 1. So it's more like this in 2d:
+    # `|x
+    # y|0
+    # And in 3D:
+    # Top:  `|zx  Bottom: xy|x
+    #      zy|z            y|0
+    # So, this cube:
+    # Top:  0|1  Bottom: 0|0
+    #       0|0          0|0
+    # Should be summed with all these positions:
+    # Top:  0|1  Bottom: 0|1
+    #       0|1          0|1
+    # and then multiplied with the same position on b after b performs the same operation.
+    for a_i, a_x in np.ndenumerate(a):
+        a_d = []
+        for e, i in enumerate(a_i):
+            if i != one[e]:
+                a_d.append(e)
+        if len(a_d) > 0:
+            a_sum = 0
+            b_sum = 0
+            for diff in itertools.product(*[[0, 1]] * len(a_d)):
+                index = list(one)
+                for d_e, d_d in zip(a_d, diff):
+                    index[d_e] = d_d
+                index = tuple(index)
+                a_sum += a[index]
+                b_sum += b[index]
+
+            o[a_i] += a_sum * b_sum
         else:
-            o = b * np.sum(a)
-    else:
-        o = a * b
+            o[a_i] += a[a_i] * b[one]
+
+    # However, the problem with that last loop is that it add too much in the lower positions:
+    #  0|0 and 0|0 = 0|1
+    #  0|1     0|1   1|1
+    # So now, we sum up each position closer to layer_one, and subtract that from any current position. Say this is the
+    # current position:
+    #  0|1
+    #  0|0
+    # then, this is the only one closer to one:
+    #  0|0
+    #  0|1
+    # Which has a value of one. So you subtract 1 from the original 1 in that position, and get 0.
+    for a_i, a_x in np.ndenumerate(a):
+        a_d = []
+        for e, i in enumerate(a_i):
+            if i != one[e]:
+                a_d.append(e)
+        if len(a_d) > 0:
+            for diff in itertools.product(*[[0, 1]] * len(a_d)):
+                index = list(one)
+                for d_e, d_d in zip(a_d, diff):
+                    index[d_e] = d_d
+                index = tuple(index)
+                if index != a_i:
+                    o[a_i] -= o[index]
+
+    # todo: these two loops can be defined, but the iteration has to be changed. Specifically, it has to start at
+    #  layer_one, then go outward, iterating through all positions with one dimension difference, then two, etc.
+    #  And for higher dimensions, this can be highly parallelizable. In 100 dimensions, there will be 100 items max
+    #  with the same difference in dimensions from one.
     s = np.sum(o)
-    if s != 0:
-        return o / s
-    else:
+    if s == 0:
         return layer_zero(o)
+    else:
+        return o / s
+
+
+def layer_not(a: np.ndarray) -> np.ndarray:
+    """Run a not operation on a layer of neurons."""
+    o = np.flip(a)
+    return o
 
 
 def layer_or(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """Run an or operation between two layers of neurons."""
-    o = convolve(a, b, mode="constant", cval=0)
-    s = np.sum(o)
-    if s != 0:
-        return o / s
-    else:
-        return layer_zero(o)
+    """Run an and operation between two layers of neurons."""
+
+    # For now, I'll just cheat and use functional completeness.
+    # A OR B = ( A NAND A ) NAND ( B NAND B )
+    # layer_not is really quick, so this isn't expensive at all.
+
+    a_not = layer_not(a)
+    b_not = layer_not(b)
+    an_and_bn = layer_and(a_not, b_not)
+    an_nand_bn = layer_not(an_and_bn)
+
+    # todo: make a faster version of this.
+    return an_nand_bn
 
 
 class PInt(Real):
@@ -126,15 +207,15 @@ class PInt(Real):
                     + (0,)
                     + (slice(2),) * (self.ndim - d - 1)
                     + (slice(last_slice),)
-                ] *= in_val[0, -bits:]
+                    ] *= in_val[0, -bits:]
                 self.tensor[
                     (slice(2),) * d
                     + (1,)
                     + (slice(2),) * (self.ndim - d - 1)
                     + (slice(last_slice),)
-                ] *= in_val[1, -bits:]
+                    ] *= in_val[1, -bits:]
                 anti_tensor = (1 - self.tensor) * (
-                    (1.0 - confidence) / (2 ** self.ndim - 1)
+                        (1.0 - confidence) / (2 ** self.ndim - 1)
                 )
             self.tensor *= confidence
             self.tensor += anti_tensor
@@ -146,7 +227,7 @@ class PInt(Real):
         for b in reversed(range(self.bits)):
             if np.sum(self.tensor[..., b]) != 0:
                 new_tensor[..., b] = (
-                    self.tensor[..., b] / np.sum(self.tensor[..., b]) * confidence
+                        self.tensor[..., b] / np.sum(self.tensor[..., b]) * confidence
                 )
         return PInt(new_tensor)
 
@@ -174,7 +255,7 @@ class PInt(Real):
         norm = self.normalize()
         for b in reversed(range(self.bits)):
             new_tensor[..., b] = multiplier[..., b] + (
-                (1.0 - value) * norm.tensor[..., b]
+                    (1.0 - value) * norm.tensor[..., b]
             )
         return PInt(new_tensor)
 
@@ -186,6 +267,40 @@ class PInt(Real):
         else:
             raise NotImplementedError(f"{type(other)} type currently not implemented.")
         return other_tensor
+
+    def __xor__(self, other):
+        other_tensor = self._handle_other_types(other)
+        self_confidence = self.confidence
+        other_confidence = other.confidence
+        half_sum_prob = np.zeros_like(self.tensor)
+        for b in reversed(range(self.bits)):
+            half_sum_prob[..., b] = layer_xor(self.tensor[..., b], other_tensor[..., b])
+        return PInt(half_sum_prob).normalize(self_confidence + other_confidence)
+
+    def __and__(self, other):
+        other_tensor = self._handle_other_types(other)
+        self_confidence = self.confidence
+        other_confidence = other.confidence
+        half_sum_prob = np.zeros_like(self.tensor)
+        for b in reversed(range(self.bits)):
+            half_sum_prob[..., b] = layer_and(self.tensor[..., b], other_tensor[..., b])
+        return PInt(half_sum_prob).normalize(self_confidence + other_confidence)
+
+    def __invert__(self):
+        self_confidence = self.confidence
+        half_sum_prob = np.zeros_like(self.tensor)
+        for b in reversed(range(self.bits)):
+            half_sum_prob[..., b] = layer_not(self.tensor[..., b])
+        return PInt(half_sum_prob).normalize(self_confidence)
+
+    def __or__(self, other):
+        other_tensor = self._handle_other_types(other)
+        self_confidence = self.confidence
+        other_confidence = other.confidence
+        half_sum_prob = np.zeros_like(self.tensor)
+        for b in reversed(range(self.bits)):
+            half_sum_prob[..., b] = layer_or(self.tensor[..., b], other_tensor[..., b])
+        return PInt(half_sum_prob).normalize(self_confidence + other_confidence)
 
     def __add__(self, other):
         """Full adder implemented with probabilities."""
@@ -224,7 +339,7 @@ class PInt(Real):
                     tuple(slice(2) for _ in range(n))
                     + (0,)
                     + tuple(slice(2) for _ in range(n + 1, self.ndim))
-                ]
+                    ]
                 sum_quant = np.sum(
                     pos_quant, axis=tuple(i for i in range(self.ndim - 1))
                 )
