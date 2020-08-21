@@ -95,7 +95,7 @@ def layer_and(a: np.ndarray, b: np.ndarray) -> np.ndarray:
                 index = list(one)
                 for d_e, d_d in zip(a_d, diff):
                     index[d_e] = d_d
-                index = tuple(index)
+                index = tuple(index)  # type: ignore
                 a_sum += a[index]
                 b_sum += b[index]
 
@@ -124,7 +124,7 @@ def layer_and(a: np.ndarray, b: np.ndarray) -> np.ndarray:
                 index = list(one)
                 for d_e, d_d in zip(a_d, diff):
                     index[d_e] = d_d
-                index = tuple(index)
+                index = tuple(index)  # type: ignore
                 if index != a_i:
                     o[a_i] -= o[index]
 
@@ -207,15 +207,15 @@ class PInt(Real):
                     + (0,)
                     + (slice(2),) * (self.ndim - d - 1)
                     + (slice(last_slice),)
-                    ] *= in_val[0, -bits:]
+                ] *= in_val[0, -bits:]
                 self.tensor[
                     (slice(2),) * d
                     + (1,)
                     + (slice(2),) * (self.ndim - d - 1)
                     + (slice(last_slice),)
-                    ] *= in_val[1, -bits:]
+                ] *= in_val[1, -bits:]
                 anti_tensor = (1 - self.tensor) * (
-                        (1.0 - confidence) / (2 ** self.ndim - 1)
+                    (1.0 - confidence) / (2 ** self.ndim - 1)
                 )
             self.tensor *= confidence
             self.tensor += anti_tensor
@@ -227,7 +227,7 @@ class PInt(Real):
         for b in reversed(range(self.bits)):
             if np.sum(self.tensor[..., b]) != 0:
                 new_tensor[..., b] = (
-                        self.tensor[..., b] / np.sum(self.tensor[..., b]) * confidence
+                    self.tensor[..., b] / np.sum(self.tensor[..., b]) * confidence
                 )
         return PInt(new_tensor)
 
@@ -255,7 +255,7 @@ class PInt(Real):
         norm = self.normalize()
         for b in reversed(range(self.bits)):
             new_tensor[..., b] = multiplier[..., b] + (
-                    (1.0 - value) * norm.tensor[..., b]
+                (1.0 - value) * norm.tensor[..., b]
             )
         return PInt(new_tensor)
 
@@ -339,7 +339,7 @@ class PInt(Real):
                     tuple(slice(2) for _ in range(n))
                     + (0,)
                     + tuple(slice(2) for _ in range(n + 1, self.ndim))
-                    ]
+                ]
                 sum_quant = np.sum(
                     pos_quant, axis=tuple(i for i in range(self.ndim - 1))
                 )
