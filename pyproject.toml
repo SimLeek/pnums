@@ -1,6 +1,6 @@
 [tool.poetry]
 name = 'pnums'
-version = '0.0.2'
+version = '0.0.3'
 description = 'A library that encodes coordinates so neural networks can use them better.'
 authors = ['SimLeek <simulator.leek@gmail.com>']
 license = 'MIT'
