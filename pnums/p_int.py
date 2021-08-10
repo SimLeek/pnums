@@ -244,6 +244,19 @@ class PInt(Real):
                     new_tensor[(*ind, b)] = 1
         return PInt(new_tensor)
 
+    def overall_confidence(self):
+        n = self.normalize()
+        q = n.quantize().tensor
+        n = n.tensor
+        o = np.zeros_like(n)
+
+        o[q>0] = (n/q)[q>0]
+
+        sum = np.sum(o)
+        avg = sum/np.count_nonzero(o)
+
+        return avg
+
     def coalesce(self, value=1.0):
         """
         Interpolate between normalized and quantized PInts.

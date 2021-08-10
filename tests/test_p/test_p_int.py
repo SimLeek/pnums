@@ -860,6 +860,17 @@ def test_or_3d():
         c.normalize(1.0).tensor,
     )
 
+def test_overall_confidence():
+    a = PInt(10, 11, 12, bits=8, confidence=0.7)
+    b = PInt(6, 13, 7, bits=8, confidence=0.8)
+    c = a + b
+    acon = a.overall_confidence()
+    bcon = b.overall_confidence()
+    ccon = c.overall_confidence()
+    print(acon)
+    print(bcon)
+    print(ccon)
+
 
 def test_add_3d():
     a = PInt(10, 11, 12, bits=8)
