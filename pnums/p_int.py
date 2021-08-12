@@ -245,15 +245,16 @@ class PInt(Real):
         return PInt(new_tensor)
 
     def overall_confidence(self):
+        """Get the overall confidence of the entire probabilistic integer."""
         n = self.normalize()
         q = n.quantize().tensor
         n = n.tensor
         o = np.zeros_like(n)
 
-        o[q>0] = (n/q)[q>0]
+        o[q > 0] = (n / q)[q > 0]
 
         sum = np.sum(o)
-        avg = sum/np.count_nonzero(o)
+        avg = sum / np.count_nonzero(o)
 
         return avg
 
