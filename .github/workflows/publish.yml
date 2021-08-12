@@ -15,6 +15,8 @@ jobs:
           python-version: 3.7
       - name: Install dependencies
         run: pip install .
+      - name: Install publish dependencies
+        run: pip install wheel
       - name: Build
         run: python setup.py sdist bdist_wheel
       - name: Publish distribution 📦 to Test PyPI
