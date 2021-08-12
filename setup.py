@@ -21,7 +21,7 @@ with open(os.path.join(here, "README.rst"), "rb") as stream:
 setup(
     long_description=readme,
     name="pnums",
-    version="0.0.3",
+    version="0.0.4",
     description="A library that encodes coordinates so neural networks can use them better.",
     python_requires="==3.*,>=3.6.0",
     project_urls={"repository": "https://github.com/simleek/pnums"},
