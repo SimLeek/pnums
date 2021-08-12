@@ -19,6 +19,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pip install ".[dev]"
+        run: pip install .
+      - name: Manually install dev dependencies
+        run: pip install black>=18.3.0.a0 coverage>=4.5.0 mock>=3.0.0 mypy>=0.740.0 pydocstyle>=4.0.0 pytest==5.2.1 sphinx>=2.2.0 tox>=3.14.0 tox-gh-actions>=0.3.0 typing==3.7.4.1
       - name: Test with tox
         run: tox -p auto -o
