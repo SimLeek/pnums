@@ -7,7 +7,7 @@ import numpy as np
 from scipy.ndimage import convolve  # type: ignore
 
 from pnums.int_to_xcoords import int_to_bool_array, inversion_double
-from pnums.xcoords_to_int import right_pack_bool_to_int
+from pnums.xcoords_to_int import right_pack_bool_to_int, right_pack_fuzzy_bool_to_int
 
 
 def shift(arr, num, fill_value=np.nan):
@@ -179,7 +179,7 @@ class PInt(Real):
             self.bits = self.tensor.shape[-1]
         else:
             if dtype not in {
-                np.float,
+                float,
                 np.float16,
                 np.float32,
                 np.float64,
@@ -196,7 +196,7 @@ class PInt(Real):
 
             for d in range(self.ndim):
                 in_val = inversion_double(int_to_bool_array(args[d], bits)).astype(
-                    np.float
+                    float
                 )
                 if in_val.shape[-1] < bits:
                     last_slice = in_val.shape[-1]
@@ -207,15 +207,15 @@ class PInt(Real):
                     + (0,)
                     + (slice(2),) * (self.ndim - d - 1)
                     + (slice(last_slice),)
-                ] *= in_val[0, -bits:]
+                    ] *= in_val[0, -bits:]
                 self.tensor[
                     (slice(2),) * d
                     + (1,)
                     + (slice(2),) * (self.ndim - d - 1)
                     + (slice(last_slice),)
-                ] *= in_val[1, -bits:]
+                    ] *= in_val[1, -bits:]
                 anti_tensor = (1 - self.tensor) * (
-                    (1.0 - confidence) / (2 ** self.ndim - 1)
+                        (1.0 - confidence) / (2 ** self.ndim - 1)
                 )
             self.tensor *= confidence
             self.tensor += anti_tensor
@@ -227,7 +227,7 @@ class PInt(Real):
         for b in reversed(range(self.bits)):
             if np.sum(self.tensor[..., b]) != 0:
                 new_tensor[..., b] = (
-                    self.tensor[..., b] / np.sum(self.tensor[..., b]) * confidence
+                        self.tensor[..., b] / np.sum(self.tensor[..., b]) * confidence
                 )
         return PInt(new_tensor)
 
@@ -269,7 +269,7 @@ class PInt(Real):
         norm = self.normalize()
         for b in reversed(range(self.bits)):
             new_tensor[..., b] = multiplier[..., b] + (
-                (1.0 - value) * norm.tensor[..., b]
+                    (1.0 - value) * norm.tensor[..., b]
             )
         return PInt(new_tensor)
 
@@ -340,26 +340,57 @@ class PInt(Real):
         other_tensor = self._handle_other_types(other)
         return self.__add__(1 - other_tensor)
 
-    def asfloat(self):
-        """Return the floating point representation of all corellated numbers held in this PInt."""
-        quant = self.normalize().quantize().tensor.astype(np.bool)
-        if self.ndim == 1:
-            val = right_pack_bool_to_int(quant[0, ...])
-            return float(val)
+    def asfloat(self, method='top'):
+        """
+        Return the floating point representation of all corellated numbers held in this PInt.
+
+        :param method:
+            'top': take only the highest probability and turn that into a number
+            'average': take the average of all probabilities and turn that into a number.
+                Note: does not work well with addition and other pint operations,
+                  but might work better with neural nets.
+
+        """
+        if method == 'top':
+            quant = self.normalize().quantize().tensor.astype(bool)
+            if self.ndim == 1:
+                val = right_pack_bool_to_int(quant[0, ...])
+                return float(val)
+            else:
+                vals = []
+                for n in range(self.ndim):
+                    pos_quant = quant[
+                        tuple(slice(2) for _ in range(n))
+                        + (0,)
+                        + tuple(slice(2) for _ in range(n + 1, self.ndim))
+                        ]
+                    sum_quant = np.sum(
+                        pos_quant, axis=tuple(i for i in range(self.ndim - 1))
+                    )
+                    val = right_pack_bool_to_int(sum_quant)
+                    vals.append(val)
+                return tuple(vals)
+        elif method == 'average':
+            norm = self.normalize().tensor
+            if self.ndim == 1:
+                val = right_pack_fuzzy_bool_to_int(norm[0, ...])
+                return float(val)
+            else:
+                vals = []
+                for n in range(self.ndim):
+                    pos_quant = norm[
+                        tuple(slice(2) for _ in range(n))
+                        + (0,)
+                        + tuple(slice(2) for _ in range(n + 1, self.ndim))
+                        ]
+                    sum_quant = np.sum(
+                        pos_quant, axis=tuple(i for i in range(self.ndim - 1))
+                    )
+                    val = right_pack_fuzzy_bool_to_int(sum_quant)
+                    vals.append(val)
+                return tuple(vals)
         else:
-            vals = []
-            for n in range(self.ndim):
-                pos_quant = quant[
-                    tuple(slice(2) for _ in range(n))
-                    + (0,)
-                    + tuple(slice(2) for _ in range(n + 1, self.ndim))
-                ]
-                sum_quant = np.sum(
-                    pos_quant, axis=tuple(i for i in range(self.ndim - 1))
-                )
-                val = right_pack_bool_to_int(sum_quant)
-                vals.append(val)
-            return tuple(vals)
+            raise ValueError("method parameter must be one of {'top', 'average'}")
 
     def __float__(self):
         f = self.asfloat()

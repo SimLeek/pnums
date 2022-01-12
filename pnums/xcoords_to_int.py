@@ -13,7 +13,7 @@ def right_pack_array(in_array):
     :param in_array:
     :return:
     """
-    ext_in_array = np.zeros((8 - (len(in_array)) % 8,), dtype=np.bool)
+    ext_in_array = np.zeros((8 - (len(in_array)) % 8,), dtype=bool)
     padded_in_array = np.concatenate((ext_in_array, in_array))
     packed_in = np.packbits(padded_in_array)
     return packed_in
@@ -48,3 +48,22 @@ def right_pack_bool_to_int(in_array):
     arr1 = right_pack_array(in_array)
     arr2 = packed_unit8_to_int(arr1)
     return arr2
+
+def right_pack_fuzzy_bool_to_int(in_array):
+    """
+        Convert an array of booleans to a packed array of unit8s.
+
+        This is one part of getting numbers back out of pcoord format. Another is undoing the ith_middle change.
+
+        >>> right_pack_fuzzy_bool_to_int(np.array([0,0,0,0.88,0.35,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]))
+        1106248.68
+
+        """
+
+    out_float = 0.0
+    bits = in_array.shape[0]
+    for e, i in enumerate(in_array):
+        out_float += i*2**(bits-e-1)
+    return out_float
+
+

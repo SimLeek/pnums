@@ -189,6 +189,14 @@ def test_add_1d():
     i = float(c)
     assert i == 16
 
+    i = c.asfloat(method='average')
+    assert i == 13.926218450069427
+
+    d = PInt(0, bits=5)
+    d.tensor = a.tensor + b.tensor
+    i = d.asfloat(method='average')
+    assert i == 10.050000339746475
+
     a = PInt(10, bits=5)
     b = PInt(6, bits=5)
 
@@ -341,6 +349,14 @@ def test_add_2d():
     )
 
     assert c.asfloat() == (16, 24)
+
+    i = c.asfloat(method='average')
+    assert i == (59.34417091310024, 65.10842560231686)  # artifacts of addition on higher bits.
+
+    d = PInt(0, 0, bits=5)
+    d.tensor = a.tensor + b.tensor
+    i = d.asfloat(method='average')
+    assert i == (27.733335733413696, 31.20000195503235)
 
     a = PInt(1, 2, bits=6)
     b = PInt(2, 1, bits=6)
