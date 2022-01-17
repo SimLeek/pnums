@@ -2,8 +2,8 @@ PNums
 =======
 Probabilistic numbers.
 
-This library simulates the coordinate system in the mammalian entorhinal cortex, which is used for recognizing and
-mapping features to locations, or SLAM (Simultaneous Localization and Mapping).
+This library simulates the coordinate system in the mammalian entorhinal cortex, which is used as part of a larger
+system for recognizing and mapping features to locations, or SLAM (Simultaneous Localization and Mapping).
 
 The pnums here support coordinates in n-dimensions as well as mathematical operations on those numbers, which should
 allow for sensor fusion. Some research suggests this system is repeated in the neocortex. [Hawkins2019]_
